@@ -31,5 +31,5 @@ public class UserRestController {
     public UserDTO getUser(@PathVariable long id) {
         return userMapper.toDTO(userService.getUser(id));
     }
-    
+
 }
