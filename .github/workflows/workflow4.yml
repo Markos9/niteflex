@@ -83,8 +83,8 @@ jobs:
         run: echo "DOCKER_TAG=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Build Docker image
-        run: mvn -DskipTests -Dspring-boot.build-image.imageName=${{ secrets.DOCKERHUB_USERNAME }}/nitflex-staging:${{ steps.project.outputs.tag }} spring-boot:build-image
-
+        run: mvn -DskipTests -Ddocker.image.name=${{ secrets.DOCKERHUB_USERNAME }}/nitflex-staging:${{ steps.project.outputs.tag }} spring-boot:build-image
+      
       - name: Login to DockerHub
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 

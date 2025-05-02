@@ -1,0 +1,42 @@
+name: test workflow
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  loadtesting:
+    name: Load Testing
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+          distribution: 'temurin'
+          java-version: '21'
+    - name: Run Integration Test
+      run: mvn test -Dtest=FilmServiceIntegrationTest
+
+    - name: Run API Test
+      run: mvn test -Dtest=APIRestTest
+
+    - name: Run Unit Tests
+      run: mvn test -Dtest=FilmServiceUnitTest
+
+    - name: Generate tag
+      id: project
+      run: echo "DOCKER_TAG=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+    - name: Build Docker image
+      run: mvn -DskipTests -Ddocker.image.name=${{ secrets.DOCKERHUB_USERNAME }}/nitflex-staging:${{ steps.project.outputs.tag }} spring-boot:build-image
+      
+    - name: Login to DockerHub
+      run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+    - name: Push Docker image to DockerHub
+      run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/nitflex-staging:${{ steps.project.outputs.tag }}
