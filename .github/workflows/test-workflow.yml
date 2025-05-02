@@ -30,7 +30,7 @@ jobs:
 
     - name: Generate tag
       id: project
-      run: echo "DOCKER_TAG=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      run: echo "tag=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
     - name: Build Docker image
       run: mvn -DskipTests -Ddocker.image.name=${{ secrets.DOCKERHUB_USERNAME }}/nitflex-staging:${{ steps.project.outputs.tag }} spring-boot:build-image
