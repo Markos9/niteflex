@@ -25,7 +25,8 @@
         </div>
         <div class="field">
             <label>Year</label>
-            <input id="releaseYear" name="releaseYear" type="number" placeholder="A year" value="{{film.releaseYear}}" />
+            <input id="releaseYear" name="releaseYear" type="number" placeholder="A year"
+                value="{{film.releaseYear}}" />
         </div>
         <div class="field">
             <label>Poster </label>
@@ -40,7 +41,7 @@
             {{>ageRatingPartial}}
         </div>
         <p>
-            <button class="ui button" onclick="location.href='/films/{{film.id}}'; return false;">Cancel</button>
+            <button class="ui button" onclick="location.href='/'; return false;">Cancel</button>
             <input class="ui button orange" type="submit" id="save" value="Save" />
         </p>
     </form>
