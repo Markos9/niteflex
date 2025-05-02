@@ -68,7 +68,7 @@ jobs:
     needs: multibrowser
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -81,7 +81,7 @@ jobs:
         run: mvn test -Dtest=APIRestTest
 
       - name: Run Unit Tests
-        run: mvn test -Dtest=FilmServiceTest
+        run: mvn test -Dtest=FilmServiceUnitTest
 
       - name: Generate tag
         id: project
