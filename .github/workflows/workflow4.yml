@@ -49,11 +49,6 @@ jobs:
       - name: Run Web System Tests on ${{ matrix.browser }}
         shell: bash
         run: |
-          # Para Ubuntu+Chrome, forzamos HOME limpio
-          if [ "${{ matrix.os }}" = "ubuntu-latest" ] && [ "${{ matrix.browser }}" = "chrome" ]; then
-            export HOME=$(mktemp -d)
-          fi
-
           # En Ubuntu (cualquier navegador) arrancamos los tests dentro de Xvfb
           if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
             sudo apt-get update && sudo apt-get install -y xvfb
