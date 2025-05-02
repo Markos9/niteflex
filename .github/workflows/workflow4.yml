@@ -2,19 +2,10 @@ name: Workflow 4
 
 on:
   workflow_dispatch:
-  # schedule:
-   #  - cron: '0 2 * * *'
-
-  #push:
-  #  paths:
-  #    - src/**
-  #    - pom.xml
-  #  branches:
-  #    - main
 
 permissions:
-    id-token: write
-    contents: read
+  id-token: write
+  contents: read
 
 jobs:
   multibrowser:
@@ -42,25 +33,19 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
-      - name: Install Chrome and ChromeDriver on Ubuntu
-        if: matrix.os == 'ubuntu-latest' && matrix.browser == 'chrome'
-        run: |
-            sudo apt-get update
-            sudo apt-get install -y wget unzip
-            wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-            sudo apt install -y ./google-chrome-stable_current_amd64.deb
-            CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+')
-            wget -O chromedriver.zip "https://chromedriver.storage.googleapis.com/$CHROME_VERSION/chromedriver_linux64.zip" || \
-              wget -O chromedriver.zip "https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/$CHROME_VERSION/linux64/chromedriver-linux64.zip"
-            unzip chromedriver.zip
-            sudo mv chromedriver /usr/local/bin/
-            sudo chmod +x /usr/local/bin/chromedriver
 
-      - name: Install Firefox and GeckoDriver on Ubuntu
+      - name: Install Chrome on Ubuntu
+        if: matrix.os == 'ubuntu-latest' && matrix.browser == 'chrome'
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: latest
+
+      - name: Install Firefox on Ubuntu
         if: matrix.os == 'ubuntu-latest' && matrix.browser == 'firefox'
-        run: |
-              sudo apt-get update
-              sudo apt-get install -y firefox
+        uses: browser-actions/setup-firefox@v1
+        with:
+          firefox-version: latest
+
       - name: Run Web Systems Tests on ${{ matrix.browser }}
         run: mvn test -Dtest=SeleniumInterfaceTest -Dbrowser=${{ matrix.browser }}
 
@@ -71,7 +56,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 1. Ejecutar todos los tests (excepto SmokeTest y Prueba de sistema)
       - name: Run Integration Test
         run: mvn test -Dtest=FilmServiceIntegrationTest
 
@@ -82,52 +66,49 @@ jobs:
         run: mvn test -Dtest=FilmServiceTest
 
       - name: Generate tag
-        run: echo "DOCKER_TAG=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
         id: project
-        
-      # 2. Generar imagen Docker
+        run: echo "DOCKER_TAG=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
       - name: Build Docker image
-        run: mvn spring-boot:build-image -DskipTests -Dspring-boot.build-image.imageName=${{ secrets.DOCKERHUB_USERNAME }}/nitflex-staging:${{ steps.project.outputs.tag }}
+        run: mvn spring-boot:build-image \
+             -DskipTests \
+             -Dspring-boot.build-image.imageName=${{ secrets.DOCKERHUB_USERNAME }}/nitflex-staging:${{ steps.project.outputs.tag }}
 
-      # 3. Iniciar sesión en DockerHub
       - name: Login to DockerHub
-        run: docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" -p "${{ secrets.DOCKERHUB_TOKEN }}" 
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" \
+             | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
-      # 4. Publicar la imagen
       - name: Push Docker image to DockerHub
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/nitflex-staging:${{ steps.project.outputs.tag }}
 
-        # 5. Desplegar la imagen en Azure Container Instance (ACI)
       - name: Deploy to Azure
         uses: azure/login@v2
         with:
-            client-id: ${{ secrets.AZURE_CLIENT_ID }}
-            tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-            subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Run az commands to deploy container
         run: |
-            az container create \
-                --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
-                --name nitflex-staging \
-                --image ${{ secrets.DOCKERHUB_USERNAME }}/nitflex-staging:${{ steps.project.outputs.tag }} \
-                --registry-login-server index.docker.io \
-                --registry-username ${{ secrets.DOCKERHUB_USERNAME }} \
-                --registry-password ${{ secrets.DOCKERHUB_READ_TOKEN }} \
-                --dns-name-label nitflex-staging-${{ secrets.DOCKERHUB_USERNAME }} \
-                --ports 8080 \
-                --os-type Linux \
-                --cpu 1 \
-                --memory 1.5
+          az container create \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --name nitflex-staging \
+            --image ${{ secrets.DOCKERHUB_USERNAME }}/nitflex-staging:${{ steps.project.outputs.tag }} \
+            --registry-login-server index.docker.io \
+            --registry-username ${{ secrets.DOCKERHUB_USERNAME }} \
+            --registry-password ${{ secrets.DOCKERHUB_READ_TOKEN }} \
+            --dns-name-label nitflex-staging-${{ secrets.DOCKERHUB_USERNAME }} \
+            --ports 8080 \
+            --os-type Linux \
+            --cpu 1 \
+            --memory 1.5
 
-        # 6. Ejecutar el Smoke Test sobre la aplicación desplegada
       - name: Run Smoke Test with Artillery
         uses: artilleryio/action-cli@v1
         with:
-            command: run src/test/java/es/codeurjc/web/nitflex/smoke-test.yml
+          command: run src/test/java/es/codeurjc/web/nitflex/smoke-test.yml
 
-        # 7. Ejecutar prueba de carga de Artillery
       - name: Run Load Test with Artillery
         uses: artilleryio/action-cli@v1
         with:
-            command: run load-test.yml
+          command: run load-test.yml
