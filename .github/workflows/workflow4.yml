@@ -56,6 +56,11 @@ jobs:
             sudo mv chromedriver /usr/local/bin/
             sudo chmod +x /usr/local/bin/chromedriver
 
+      - name: Install Firefox and GeckoDriver on Ubuntu
+        if: matrix.os == 'ubuntu-latest' && matrix.browser == 'firefox'
+        run: |
+              sudo apt-get update
+              sudo apt-get install -y firefox geckodriver
       - name: Run Web Systems Tests on ${{ matrix.browser }}
         run: mvn test -Dtest=SeleniumInterfaceTest -Dbrowser=${{ matrix.browser }}
 
