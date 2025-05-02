@@ -46,9 +46,10 @@ jobs:
         with:
           firefox-version: latest
 
-      - name: Run Web Systems Tests on ${{ matrix.browser }}
+      - name: Run Web System Tests on ${{ matrix.browser }}
+        shell: bash
         run: |
-          # Si estamos en Ubuntu+Chrome, forzamos un HOME limpio para Chrome
+          # For Ubuntu + Chrome, use a fresh HOME to avoid user-data-dir conflicts
           if [ "${{ matrix.os }}" = "ubuntu-latest" ] && [ "${{ matrix.browser }}" = "chrome" ]; then
             export HOME=$(mktemp -d)
           fi
@@ -81,8 +82,7 @@ jobs:
              -Dspring-boot.build-image.imageName=${{ secrets.DOCKERHUB_USERNAME }}/nitflex-staging:${{ steps.project.outputs.tag }}
 
       - name: Login to DockerHub
-        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" \
-             | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
       - name: Push Docker image to DockerHub
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/nitflex-staging:${{ steps.project.outputs.tag }}
