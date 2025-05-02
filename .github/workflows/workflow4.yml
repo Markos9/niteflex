@@ -42,6 +42,19 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
+      - name: Install Chrome and ChromeDriver on Ubuntu
+        if: matrix.os == 'ubuntu-latest' && matrix.browser == 'chrome'
+        run: |
+            sudo apt-get update
+            sudo apt-get install -y wget unzip
+            wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+            sudo apt install -y ./google-chrome-stable_current_amd64.deb
+            CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+')
+            wget -O chromedriver.zip "https://chromedriver.storage.googleapis.com/$CHROME_VERSION/chromedriver_linux64.zip" || \
+              wget -O chromedriver.zip "https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/$CHROME_VERSION/linux64/chromedriver-linux64.zip"
+            unzip chromedriver.zip
+            sudo mv chromedriver /usr/local/bin/
+            sudo chmod +x /usr/local/bin/chromedriver
 
       - name: Run Web Systems Tests on ${{ matrix.browser }}
         run: mvn test -Dtest=SeleniumInterfaceTest -Dbrowser=${{ matrix.browser }}
