@@ -1,0 +1,10 @@
+config:
+  target: "https://nitflexproduction.azurewebsites.net"
+  phases:
+    - duration: 60
+      arrivalRate: 1
+
+scenarios:
+  - flow:
+      - get:
+          url: "/api/films/"

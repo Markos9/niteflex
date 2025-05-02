@@ -1,0 +1,105 @@
+config:
+  environments:
+    local:
+      target: "http://localhost:8080"
+      phases:
+        - duration: 40
+          arrivalRate: 5
+          name: "Test de carga con recuperación y creación de películas"
+      ensure:
+        maxErrorRate: 0
+        http:
+          response_time:
+            p95: 100
+    staging:
+      target: "http://localhost:8080"
+      phases:
+        - duration: 40
+          arrivalRate: 10
+          rampTo: 50
+          name: "Warm up"
+        - pause: 30
+        - duration: 300
+          arrivalRate: 50
+          name: "Load test"
+      http:
+        pool: 8
+      ensure:
+        maxErrorRate: 0
+        http:
+          response_time:
+            p95: 300
+  payload:
+    path: "films.csv"
+    fields:
+      - title
+      - synopsis
+      - releaseYear
+      - ageRating
+    order: random
+
+scenarios:
+  - name: "Recuperar películas y ver detalle de la primera"
+    weight: 70
+    flow:
+      - get:
+          url: "/api/films/"
+          expect:
+            - statusCode: 200
+          capture:
+            - json: "$[0].id"
+              as: "filmId"
+      - get:
+          url: "/api/films/{{ filmId }}"
+          expect:
+            - statusCode: 200
+
+  - name: "Crear película y comprobarla"
+    weight: 20
+    flow:
+      - post:
+          url: "/api/films/"
+          json:
+            title: "{{ title }}"
+            synopsis: "{{ synopsis }}"
+            releaseYear: "{{ releaseYear }}"
+            ageRating: "{{ ageRating }}"
+          expect:
+            - statusCode: 201
+            - contentType: application/json
+          capture:
+            - json: "$.id"
+              as: "newFilmId"
+      - get:
+          url: "/api/films/{{ newFilmId }}"
+          expect:
+            - statusCode: 200
+
+  - name: "Crear, comprobar y borrar película"
+    weight: 10
+    flow:
+      - post:
+          url: "/api/films/"
+          json:
+            title: "{{ title }}"
+            synopsis: "{{ synopsis }}"
+            releaseYear: "{{ releaseYear }}"
+            ageRating: "{{ ageRating }}"
+          expect:
+            - statusCode: 201
+            - contentType: application/json
+          capture:
+            - json: "$.id"
+              as: "tempFilmId"
+      - get:
+          url: "/api/films/{{ tempFilmId }}"
+          expect:
+            - statusCode: 200
+      - delete:
+          url: "/api/films/{{ tempFilmId }}"
+          expect:
+            - statusCode: 200
+      - get:
+          url: "/api/films/{{ tempFilmId }}"
+          expect:
+            - statusCode: 404
