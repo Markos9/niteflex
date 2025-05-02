@@ -60,7 +60,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest' && matrix.browser == 'firefox'
         run: |
               sudo apt-get update
-              sudo apt-get install -y firefox geckodriver
+              sudo apt-get install -y firefox
       - name: Run Web Systems Tests on ${{ matrix.browser }}
         run: mvn test -Dtest=SeleniumInterfaceTest -Dbrowser=${{ matrix.browser }}
 
