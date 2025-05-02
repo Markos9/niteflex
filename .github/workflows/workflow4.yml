@@ -5,12 +5,12 @@ on:
   # schedule:
    #  - cron: '0 2 * * *'
 
-  push:
-    paths:
-      - src/**
-      - pom.xml
-    branches:
-      - main
+  #push:
+  #  paths:
+  #    - src/**
+  #    - pom.xml
+  #  branches:
+  #    - main
 
 permissions:
     id-token: write
