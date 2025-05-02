@@ -25,29 +25,35 @@ jobs:
           - os: macos-latest
             browser: edge
 
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-
-      - name: Install Chrome on Ubuntu
-        if: matrix.os == 'ubuntu-latest' && matrix.browser == 'chrome'
-        uses: browser-actions/setup-chrome@v1
-        with:
-          chrome-version: latest
-
-      - name: Install Firefox on Ubuntu
-        if: matrix.os == 'ubuntu-latest' && matrix.browser == 'firefox'
-        uses: browser-actions/setup-firefox@v1
-        with:
-          firefox-version: latest
-
-      - name: Run Web Systems Tests on ${{ matrix.browser }}
-        run: mvn test -Dtest=SeleniumInterfaceTest -Dbrowser=${{ matrix.browser }}
+            steps:
+              - uses: actions/checkout@v4
+        
+              - name: Set up JDK 21
+                uses: actions/setup-java@v4
+                with:
+                  distribution: 'temurin'
+                  java-version: '21'
+        
+              - name: Install Chrome on Ubuntu
+                if: matrix.os == 'ubuntu-latest' && matrix.browser == 'chrome'
+                uses: browser-actions/setup-chrome@v1
+                with:
+                  chrome-version: latest
+        
+              - name: Install Firefox on Ubuntu
+                if: matrix.os == 'ubuntu-latest' && matrix.browser == 'firefox'
+                uses: browser-actions/setup-firefox@v1
+                with:
+                  firefox-version: latest
+        
+              - name: Run Web Systems Tests on ${{ matrix.browser }}
+                run: |
+                  # Si estamos en Ubuntu+Chrome, forzamos un HOME limpio para Chrome
+                  if [ "${{ matrix.os }}" = "ubuntu-latest" ] && [ "${{ matrix.browser }}" = "chrome" ]; then
+                    export HOME=$(mktemp -d)
+                  fi
+        
+                  mvn test -Dtest=SeleniumInterfaceTest -Dbrowser=${{ matrix.browser }}
 
   loadtesting:
     name: Load Testing
